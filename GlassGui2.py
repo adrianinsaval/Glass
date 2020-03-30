@@ -41,14 +41,14 @@ def createActions():
     a1 = QtGui.QAction(mw)
     a1.setParent(mw)
     a1.setText("Glass toggle dock mode")
-    a1.setObjectName("GlassToggleMode")
+    a1.setObjectName("Glass2ToggleMode")
     a1.setShortcut(QtGui.QKeySequence("Q, 3"))
     a1.triggered.connect(setMode)
     mw.addAction(a1)
     a2 = QtGui.QAction(mw)
     a2.setParent(mw)
     a2.setText("Glass toggle dock visibility")
-    a2.setObjectName("GlassToggleVisibility")
+    a2.setObjectName("Glass2ToggleVisibility")
     a2.setShortcut(QtGui.QKeySequence("Q, 4"))
     a2.triggered.connect(setVisibility)
     mw.addAction(a2)
@@ -165,10 +165,10 @@ def onResize():
     """Resize dock."""
     if mode == 1:
         x = mdi.geometry().width() - 230
-        y = 150
+        y = 160
         w = 230
         h = (mdi.geometry().height() -
-             mdi.findChild(QtGui.QTabBar).geometry().height()) - 150
+             mdi.findChild(QtGui.QTabBar).geometry().height()) - 160
         dock.setGeometry(x, y, w, h)
 
 
@@ -183,6 +183,7 @@ def onStart():
             setMode() # activate Glass mode
             if dock.isVisible():
                 mw.findChild(QtGui.QWidget,'Combo View').findChild(QtGui.QWidget, 'propertyTab').parent().parent().setSizes([0,1]) # look for the property editor parent (is a QSplitter) and apply sizes to hide treeview
+        Gui.ActiveDocument.ActiveView.setAxisCross(True)
         timer.timeout.connect(onResize)
         timer.start(2000)
 

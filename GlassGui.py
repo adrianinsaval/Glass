@@ -75,7 +75,7 @@ def applyGlass(boolean, widget):
         pass
     try:
         if boolean:
-            widget.setStyleSheet("background:transparent; border:none; color:black;")
+            widget.setStyleSheet("background:transparent; border:none; color:white;")
         else:
             widget.setStyleSheet("")
     except:
@@ -162,7 +162,7 @@ def onResize():
     if mode == 1:
         x = 0
         y = 0
-        w = mdi.geometry().width() / 100 * 20
+        w = mdi.geometry().width() / 100 * 23
         h = (mdi.geometry().height() -
              mdi.findChild(QtGui.QTabBar).geometry().height())
         dock.setGeometry(x, y, w, h)
