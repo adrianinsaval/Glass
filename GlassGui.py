@@ -111,13 +111,13 @@ def applyGlass(boolean, widget):
             widget.setVerticalScrollBarPolicy((QtCore.Qt.ScrollBarAsNeeded))
     except:
         pass
-    try:
-        if boolean:
-            widget.setHorizontalScrollBarPolicy((QtCore.Qt.ScrollBarAlwaysOff))
-        else:
-            widget.setHorizontalScrollBarPolicy((QtCore.Qt.ScrollBarAsNeeded))
-    except:
-        pass
+    #try:
+        #if boolean:
+            #widget.setHorizontalScrollBarPolicy((QtCore.Qt.ScrollBarAlwaysOff))
+        #else:
+            #widget.setHorizontalScrollBarPolicy((QtCore.Qt.ScrollBarAsNeeded))
+    #except:
+        #pass
     try:
         widget.setDocumentMode(boolean)
     except:
@@ -157,6 +157,8 @@ def widgetList(boolean):
 def setMode():
     """Set dock or overlay widget mode."""
     global mode
+    global visibility
+    visibility = True
     mdi = mw.findChild(QtGui.QMdiArea)
 
     if mode == 0:
@@ -180,24 +182,39 @@ def setMode():
 def setVisibility():
     """Toggle visibility."""
     dock.toggleViewAction().trigger()
+    global visibility
+    visibility = not visibility
 
 
 def onResize():
     """Resize dock."""
     mdi = mw.findChild(QtGui.QMdiArea)
 
+    try:
+        notStartPage = mdi.currentSubWindow().windowTitle()!= "Start page"
+    except AttributeError:
+        notStartPage = True
+
+    # look for the property editor parent (is a QSplitter)
+    splitter = mw.findChild(QtGui.QWidget,'Combo View').findChild(QtGui.QWidget, 'propertyTab').parent().parent()
+
+    if (str(Gui.activeView()) == "View3DInventor") and notStartPage and visibility:
+        dock.show()
+        # hide tree view in combo view
+        splitter.setSizes([0,1])
+    else:
+        dock.hide()
+        # show tree view in combo view
+        splitter.setSizes([0.85*splitter.geometry().height()/2, 1.15*splitter.geometry().height()/2])
+        return
+
     if mode == 1:
         x = 0
         y = 0
-        w = mdi.geometry().width() / 100 * 23
+        w = mdi.geometry().width() / 100 * 20
         h = (mdi.geometry().height() -
              mdi.findChild(QtGui.QTabBar).geometry().height())
         dock.setGeometry(x, y, w, h)
-
-    if str(Gui.activeView()) == "View3DInventor":
-        dock.show()
-    else:
-        dock.hide()
 
 
 def onStart():
@@ -207,18 +224,23 @@ def onStart():
         timer.timeout.disconnect(onStart)
         findDock()
         createActions()
+        global visibility
+        visibility = dock.isVisible()
         if p.GetBool("glassAuto", 1):
             setMode() # activate Glass mode
+        elif p.GetBool("showDock", 1) and dock.isHidden():
+            setVisibility() #show the Dock
         timer.timeout.connect(onResize)
         timer.start(2000)
 
 
-if p.GetBool("FirstRun", 1):
-    """Setup defaults on the first run."""
-    firstRun()
-    p.SetBool("FirstRun", 0)
+#if p.GetBool("FirstRun", 1):
+    #"""Setup defaults on the first run."""
+    #firstRun()
+    #p.SetBool("FirstRun", 0)
 
 
-timer = QtCore.QTimer()
-timer.timeout.connect(onStart)
-timer.start(500)
+if (not FreeCAD.Version().__contains__("LinkStage3")):
+    timer = QtCore.QTimer()
+    timer.timeout.connect(onStart)
+    timer.start(500)

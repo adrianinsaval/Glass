@@ -25,15 +25,16 @@ from PySide import QtGui
 from PySide import QtCore
 
 mode = 0
+restoreMode = 0
 wid = QtGui.QWidget()
 mw = Gui.getMainWindow()
-mdi = mw.findChild(QtGui.QMdiArea)
+p = FreeCAD.ParamGet("User parameter:BaseApp/Glass")
 
 
 def findDock():
     """Find combo view widget."""
     global dock
-    dock = mw.findChild(QtGui.QDockWidget, "Tree view")
+    dock = mw.findChild(QtGui.QDockWidget, "Combo View")
 
 
 def createActions():
@@ -81,19 +82,23 @@ def applyGlass(boolean, widget):
     except:
         pass
     try:
+        widget.setAutoFillBackground(boolean)
+    except:
+        pass
+    try:
         if boolean:
             widget.setVerticalScrollBarPolicy((QtCore.Qt.ScrollBarAlwaysOff))
         else:
             widget.setVerticalScrollBarPolicy((QtCore.Qt.ScrollBarAsNeeded))
     except:
         pass
-    try:
-        if boolean:
-            widget.setHorizontalScrollBarPolicy((QtCore.Qt.ScrollBarAsNeeded))
-        else:
-            widget.setHorizontalScrollBarPolicy((QtCore.Qt.ScrollBarAsNeeded))
-    except:
-        pass
+    #try:
+        #if boolean:
+            #widget.setHorizontalScrollBarPolicy((QtCore.Qt.ScrollBarAlwaysOff))
+        #else:
+            #widget.setHorizontalScrollBarPolicy((QtCore.Qt.ScrollBarAsNeeded))
+    #except:
+        #pass
     try:
         widget.setDocumentMode(boolean)
     except:
@@ -133,6 +138,9 @@ def widgetList(boolean):
 def setMode():
     """Set dock or overlay widget mode."""
     global mode
+    global visibility
+    visibility = True
+    mdi = mw.findChild(QtGui.QMdiArea)
 
     if mode == 0:
         dock.setParent(mdi)
@@ -155,21 +163,40 @@ def setMode():
 def setVisibility():
     """Toggle visibility."""
     dock.toggleViewAction().trigger()
-    if dock.isVisible():
-        mw.findChild(QtGui.QWidget,'Combo View').findChild(QtGui.QWidget, 'propertyTab').parent().parent().setSizes([0,1]) # look for the property editor parent (is a QSplitter) and apply sizes to hide treeview
-    else:
-        mw.findChild(QtGui.QWidget,'Combo View').findChild(QtGui.QWidget, 'propertyTab').parent().parent().setSizes([mdi.geometry().height()/2,mdi.geometry().height()/2]) # look for the property editor parent (is a QSplitter) and apply sizes to show treeview
+    global visibility
+    visibility = not visibility
 
 
 def onResize():
     """Resize dock."""
+    mdi = mw.findChild(QtGui.QMdiArea)
+    global restoreMode
+
+    try:
+        isStartPage = mdi.currentSubWindow().windowTitle()== "Start page"
+    except AttributeError:
+        isStartPage = False
+
+    if isStartPage:
+        dock.hide()
+        return
+    elif visibility:
+        dock.show()
+
     if mode == 1:
-        x = mdi.geometry().width() - 230
-        y = 160
-        w = 230
+        if str(Gui.activeView()) != "View3DInventor":
+            setMode()
+            restoreMode = 1
+            return
+        x = mdi.geometry().width() - mdi.geometry().width() / 100 * 23.5
+        y = 0
+        w = mdi.geometry().width() / 100 * 23.5
         h = (mdi.geometry().height() -
-             mdi.findChild(QtGui.QTabBar).geometry().height()) - 160
+             mdi.findChild(QtGui.QTabBar).geometry().height()) - 150
         dock.setGeometry(x, y, w, h)
+    elif restoreMode and (str(Gui.activeView()) == "View3DInventor"):
+        setMode()
+        restoreMode = 0
 
 
 def onStart():
@@ -179,15 +206,17 @@ def onStart():
         timer.timeout.disconnect(onStart)
         findDock()
         createActions()
-        if FreeCAD.ParamGet("User parameter:BaseApp/Glass").GetBool("glassAuto",1):
+        global visibility
+        visibility = dock.isVisible()
+        if p.GetBool("glassAuto", 1):
             setMode() # activate Glass mode
-            if dock.isVisible():
-                mw.findChild(QtGui.QWidget,'Combo View').findChild(QtGui.QWidget, 'propertyTab').parent().parent().setSizes([0,1]) # look for the property editor parent (is a QSplitter) and apply sizes to hide treeview
-        Gui.ActiveDocument.ActiveView.setAxisCross(True)
+        elif p.GetBool("showDock2", 1) and dock.isHidden():
+            setVisibility() #show the Dock
         timer.timeout.connect(onResize)
         timer.start(2000)
 
 
-timer = QtCore.QTimer()
-timer.timeout.connect(onStart)
-timer.start(500)
+if (not FreeCAD.Version().__contains__("LinkStage3")):
+    timer = QtCore.QTimer()
+    timer.timeout.connect(onStart)
+    timer.start(500)
