@@ -95,7 +95,7 @@ def applyGlass(boolean, widget):
         pass
     transparent_classes = [QtGui.QScrollBar, QtGui.QLineEdit, QtGui.QAbstractButton, QtGui.QHeaderView, QtGui.QDockWidget]
     try:
-        if boolean and (widget.__class__ in transparent_classes) or (widget.objectName() in ['qt_scrollarea_hcontainer', 'qt_scrollarea_vcontainer']):
+        if boolean and (widget.__class__ in transparent_classes):
             widget.setStyleSheet("background:transparent; border:none; color:white;")
         else:
             widget.setStyleSheet("")
@@ -154,8 +154,6 @@ def widgetList(boolean):
     for child in children:
         if isinstance(child, QtGui.QWidget):
             applyGlass(boolean, child)
-    if boolean:
-        dock.setStyleSheet("")
 
 def setMode():
     """Set dock or overlay widget mode."""
